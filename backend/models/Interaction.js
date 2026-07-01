@@ -7,7 +7,8 @@ const InteractionSchema = new mongoose.Schema({
       text: String,
       sender: { type: String, enum: ['user', 'ai'] },
       timestamp: { type: Date, default: Date.now },
-      modality: { type: String, enum: ['text', 'voice', 'gesture'], default: 'text' }
+      modality: { type: String, enum: ['text', 'voice', 'gesture'], default: 'text' },
+      mode: { type: String }
     }
   ],
   context: {

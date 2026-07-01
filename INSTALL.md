@@ -51,4 +51,8 @@ Follow these steps to get the AI-Based Interaction System running on your local 
 
 - **Text Chat**: Simply type in the input field and press Enter.
 - **Voice Input**: Click the microphone icon to start speaking. The system will convert your speech to text and send it.
-- **AI Voice**: Click the speaker icon to toggle AI voice output. When enabled, the AI will "speak" its responses.
+- **AI Voice Controls**: 
+  - Click the speaker icon in the header to toggle global AI voice output.
+  - While the AI is speaking, click the **Stop Speech** button in the header (or press the **`Escape`** key) to pause speaking at any time.
+  - Click the green **Resume** button on the message bubble to continue speaking from where it was paused, or click the **Restart** (`RotateCcw` icon) button to start from the beginning.
+  - Starting microphone dictation or toggling off the speaker icon will automatically pause any active AI speech.
