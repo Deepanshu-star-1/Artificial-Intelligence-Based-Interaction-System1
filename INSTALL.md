@@ -21,15 +21,18 @@ Follow these steps to get the AI-Based Interaction System running on your local 
    - Create a `.env` file in the `backend` folder (if not already present).
    - Add your configuration:
      ```env
-     PORT=5000
+     PORT=5001
+     FRONTEND_ORIGINS=http://localhost:5174
      MONGO_URI=mongodb://localhost:27017/ai-interaction
-     OPENAI_API_KEY=your_openai_api_key_here
+     GROQ_API_KEY=your_groq_api_key_here
+     GROQ_MODEL=openai/gpt-oss-20b
+     GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
      ```
 4. Start the backend server:
    ```bash
    npm start
    ```
-   *The server will start on http://localhost:5000*
+   *The server will start on http://localhost:5001*
 
 ## 2. Frontend Setup
 
@@ -45,7 +48,7 @@ Follow these steps to get the AI-Based Interaction System running on your local 
    ```bash
    npm run dev
    ```
-   *The frontend will be available at http://localhost:5173*
+   *The frontend will be available at http://localhost:5174*
 
 ## 3. Using the System
 

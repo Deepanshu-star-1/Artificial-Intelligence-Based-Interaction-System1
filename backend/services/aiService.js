@@ -2,9 +2,8 @@ const Interaction = require('../models/Interaction');
 const UserPreference = require('../models/UserPreference');
 const Groq = require('groq-sdk');
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-20b';
+const DEFAULT_GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 const MODE_PROMPTS = {
   chat: "You are an empathetic, conversational, and highly capable general AI assistant. Keep responses clear, helpful, and naturally structured.",
@@ -43,6 +42,14 @@ const MODE_PROMPTS = {
 
 class AIService {
   async processInteraction(userId, text, modality = 'text', mode = 'chat', image = null) {
+    if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'your_groq_api_key_here') {
+      const error = new Error('GROQ_API_KEY is missing or still uses the placeholder value');
+      error.code = 'AI_CONFIGURATION_ERROR';
+      throw error;
+    }
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
     // 1. Fetch or create session history
     let interaction = await Interaction.findOne({ userId }).sort({ updatedAt: -1 });
     if (!interaction) {
@@ -102,13 +109,15 @@ class AIService {
       // 4. Call Groq Cloud
       const completion = await groq.chat.completions.create({
         messages: messages,
-        model: image ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.1-8b-instant',
+        model: image
+          ? (process.env.GROQ_VISION_MODEL || DEFAULT_GROQ_VISION_MODEL)
+          : (process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL),
         temperature: 0.7,
         max_tokens: 1024,
       });
 
       const responseText = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
-      console.log(`Groq Response [Mode: ${mode}, Vision: ${!!image}]:`, responseText);
+      console.log(`Groq response completed [Mode: ${mode}, Vision: ${!!image}]`);
 
       // 5. Save Interaction
       const saveText = image ? `[Uploaded Image] ${text || 'View Attachment'}` : text;
@@ -118,8 +127,29 @@ class AIService {
 
       return responseText;
     } catch (error) {
-      console.error('Groq API Error:', error);
-      throw new Error('Failed to communicate with AI service');
+      if (error.status === 401) {
+        console.error('Groq API authentication failed:', error.message);
+        const authenticationError = new Error('Groq API authentication failed');
+        authenticationError.code = 'AI_AUTHENTICATION_ERROR';
+        throw authenticationError;
+      }
+
+      const status = error.status;
+      const errorDetails = {
+        403: ['AI_ACCESS_ERROR', 'Groq API access was denied'],
+        404: ['AI_MODEL_NOT_FOUND', 'Configured Groq model was not found'],
+        429: ['AI_RATE_LIMIT_ERROR', 'Groq API rate limit exceeded'],
+      };
+      const [code, message] = errorDetails[status] || (
+        status >= 500
+          ? ['AI_PROVIDER_ERROR', 'Groq API is temporarily unavailable']
+          : ['AI_SERVICE_ERROR', 'Failed to communicate with AI service']
+      );
+
+      console.error(`Groq API request failed (${status || 'network error'}):`, error.message);
+      const serviceError = new Error(message);
+      serviceError.code = code;
+      throw serviceError;
     }
   }
 }

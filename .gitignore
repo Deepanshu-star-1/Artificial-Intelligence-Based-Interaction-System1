@@ -1,1 +1,15 @@
 .vercel
+
+# Dependencies
+node_modules/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Build files
+dist/
+
+# Vercel
+.vercel

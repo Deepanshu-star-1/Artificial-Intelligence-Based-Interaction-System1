@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? 'http://localhost:5000' : '');
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (['localhost', '127.0.0.1'].includes(window.location.hostname) ? 'http://localhost:5001' : '');
 const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const socket = isLocal ? io(BACKEND_URL) : { on: () => { }, off: () => { }, emit: () => { }, connected: false };
 
@@ -1583,7 +1583,16 @@ function App() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to get response');
+      if (!response.ok) {
+        let errorMessage = 'The server could not process your request.';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Keep the safe fallback when the server does not return JSON.
+        }
+        throw new Error(errorMessage);
+      }
 
       const data = await response.json();
       setMessages(prev => {
@@ -1595,8 +1604,11 @@ function App() {
       });
     } catch (error) {
       console.error('Chat Error:', error);
+      const message = error instanceof TypeError
+        ? 'Unable to reach the backend. Please check that the server is running on port 5001.'
+        : error.message;
       setMessages(prev => [...prev, {
-        text: "Sorry, I'm having trouble connecting to the server. Please try again.",
+        text: message || 'The request failed. Please try again later.',
         sender: 'ai',
         isError: true,
         mode: selectedMode.id
